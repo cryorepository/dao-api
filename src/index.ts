@@ -8,6 +8,8 @@ import cron from 'node-cron';
 import TreasuryModel from './config/models/treasury_schema';
 import TokenModel from './config/models/token_schema';
 
+import sendDiscordMessage from './utils/coms/send_message';
+
 // Database
 import mongoose from 'mongoose';
 
@@ -94,6 +96,35 @@ app.get('/schemaToken', async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error fetching data:", error);
     res.status(500).send("Something went wrong.");
+  }
+});
+
+app.post('/refreshAll/:password', async (req: Request, res: Response): Promise<void> => {
+  const { password } = req.params;
+
+  if (!password || password != process.env.APP_PASSWORD) {
+    res.status(400).json({ error: 'Missing required parameter: password' });
+    return;
+  }
+
+  try {
+    await sendDiscordMessage(`**Request to refresh all stats for at ${new Date().toLocaleString()}**`);
+    res.status(202).json({ message: 'Processing request in the background' });
+
+    // Set isRunning to true and process in the background
+    setImmediate(async () => {
+      try {
+        await dailyRefresh();
+      } catch (error) {
+        console.error('Error initiating token refresh:', error);
+        await sendDiscordMessage(`**Request to refresh all stats FAILED at ${new Date().toLocaleString()}**`);
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    });
+  } catch (error) {
+    console.error('Error initiating token refresh:', error);
+    await sendDiscordMessage(`**Request to refresh all stats FAILED at ${new Date().toLocaleString()}**`);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
