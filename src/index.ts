@@ -65,7 +65,7 @@ app.get('/', (_req, res) => {
   res.send('200');
 });
 
-cron.schedule('1 0 * * *', dailyRefresh);  // Refresh treasury stats daily @ 00:01
+cron.schedule('20 0 * * *', dailyRefresh);  // Refresh treasury stats daily @ 00:20
 
 app.use('/ohlc', ohlcChartRouter);
 app.use('/chart', marketChartRouter);
